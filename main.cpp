@@ -2,7 +2,6 @@
 #include <vector>
 #include <chrono>
 #include <thread>
-#include <windows.h>
 #include <random>
 
 #define pc vector<vector<int>>
@@ -140,6 +139,5 @@ int main(void) {
 	for (int i = 0; i < 7; i++) {
 		fall(i);
 	}
-	printf("\x1b[%dD", 0);
-	printf("\x1b[%dA", 0);
+	display({});
 }
