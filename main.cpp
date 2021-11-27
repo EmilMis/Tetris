@@ -14,6 +14,8 @@ const int y = 20;
 
 int b[y][x];
 
+char block_char = 'O';
+
 pc I = { {0, 0}, {0, 1}, {0, 2}, {0, 3} };
 pc L = { {0, 0}, {0, 1}, {0, 2}, {1, 2} };
 pc J = { {1, 0}, {0, 0}, {0, 1}, {0, 2} };
@@ -47,7 +49,7 @@ void display(vector<vector<int>> fall) {
 			int c = 1;
 			for (int n = 0; n < fall.size(); n++) {
 				if (fall[n][0] == i && fall[n][1] == j) {
-					r[j] = char(219);
+					r[j] = block_char;
 					c = 0;
 					break;
 				}
@@ -56,7 +58,7 @@ void display(vector<vector<int>> fall) {
 				continue;
 			}
 			if (b[i][j] == 1) {
-				r[j] = char(219);
+				r[j] = block_char;
 			}
 			else {
 				r[j] = ' ';
@@ -135,12 +137,9 @@ void fall(int pic) {
 }
 
 int main(void) {
-	set_board();
-	fall(0);
-	fall(1);
-	fall(2);
-	fall(3);
-	fall(4);
-	fall(5);
-	fall(6);
+	for (int i = 0; i < 7; i++) {
+		fall(i);
+	}
+	printf("\x1b[%dD", 0);
+	printf("\x1b[%dA", 0);
 }
