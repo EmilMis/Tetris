@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 #include <random>
+#include <windows.h>
 
 #define pc vector<vector<int>>
 
@@ -29,6 +30,9 @@ vector<pc> pieces = { I, L, J, T, S, Z, O };
 
 int display_n = 0;
 pc pc_display;
+
+int xp = 0, yp = 0;
+int current_piece;
 
 void set_board() {
 	for (int i = 0; i < y; i++) {
@@ -109,8 +113,9 @@ int random_n(int s, int l) {
 	return dist(rng);
 }
 void fall(int pic) {
-	int xp = x / 2 - 1;
-	int yp = 0;
+	xp = x / 2 - 1;
+	yp = 0;
+	current_piece = pic;
 	for (int i = 0; i < y + 1; i++) {
 		pc piece = pieces[pic];
 		for (int j = 0; j < 4; j++) {
@@ -120,13 +125,13 @@ void fall(int pic) {
 		for (int j = 0; j < 4; j++) {
 			vector<int> pxpy = piece[j];
 			if (pxpy[0] == y - 1 || b[pxpy[0] + 1][pxpy[1]] == 1) {
+				pc_display = piece;
+				display_n = 1;
+				sleep(500);
 				for (int n = 0; n < 4; n++) {
 					vector<int> pxpyb = piece[n];
 					b[pxpyb[0]][pxpyb[1]] = 1;
 				}
-				pc_display = {};
-				display_n = 1;
-				sleep(50);
 				if (yp == 0) {
 					game_over = 1;
 				}
@@ -135,7 +140,7 @@ void fall(int pic) {
 		}
 		pc_display = piece;
 		display_n = 1;
-		sleep(50);
+		sleep(500);
 		yp++;
 	}
 }
@@ -148,7 +153,6 @@ void game_over_() {
 \____/\__,_/_/ /_/ /_/\___/   \____/ |___/_____/_/ |_|      
 						)";
 }
-
 void display_state() {
 	while (true) {
 		if (display_n) {
@@ -158,9 +162,38 @@ void display_state() {
 		}
 	}
 }
+void update_xp() {
+	while (true) {
+		if (GetKeyState('A') & 0x8000)
+		{
+			xp--;
+			pc piece = pieces[current_piece];
+			for (int i = 0; i < 4; i++) {
+				piece[i][0] += yp;
+				piece[i][1] += xp;
+			}
+			pc_display = piece;
+			display_n = 1;
+			while (GetKeyState('A') & 0x8000);
+		}
+		if (GetKeyState('D') & 0x8000)
+		{
+			xp++;
+			pc piece = pieces[current_piece];
+			for (int i = 0; i < 4; i++) {
+				piece[i][0] += yp;
+				piece[i][1] += xp;
+			}
+			pc_display = piece;
+			display_n = 1;
+			while (GetKeyState('D') & 0x8000);
+		}
+	}
+}
 
 int main(void) {
 	thread th(display_state);
+	thread up(update_xp);
 	for (int i = 0; i < 20; i++) {
 		fall(random_n(0, 6));
 		if (game_over) {
