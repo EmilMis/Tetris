@@ -3,24 +3,19 @@
 #include <chrono>
 #include <thread>
 #include <random>
-#include <windows.h>
 
 #define pc vector<vector<int>>
 
 using namespace std;
 
-const int x = 20;
+const int x = 10;
 const int y = 20;
-
-int game_over = 0;
 
 int b[y][x];
 
 char block_char = 'O';
 
-int xp, yp;
-int current_piece;
-int we_up = 0;
+int game_over = 0;
 
 pc I = { {0, 0}, {0, 1}, {0, 2}, {0, 3} };
 pc L = { {0, 0}, {0, 1}, {0, 2}, {1, 2} };
@@ -30,7 +25,10 @@ pc S = { {0, 2}, {0, 1}, {1, 1}, {1, 0} };
 pc Z = { {0, 0}, {0, 1}, {1, 1}, {1, 2} };
 pc O = { {0, 0}, {0, 1}, {1, 1}, {1, 0} };
 
-vector<pc> pieces = {I, L, J, T, S, Z, O};
+vector<pc> pieces = { I, L, J, T, S, Z, O };
+
+int display_n = 0;
+pc pc_display;
 
 void set_board() {
 	for (int i = 0; i < y; i++) {
@@ -110,57 +108,9 @@ int random_n(int s, int l) {
 	uniform_int_distribution<mt19937::result_type> dist(s, l);
 	return dist(rng);
 }
-void update_xy() {
-	while (true) {
-		if (!we_up) {
-			continue;
-		}
-		if (GetKeyState('A') & 0x8000)
-		{
-			int dis = 1;
-			xp = max(0, xp - 1);
-			reset();
-			pc piece = pieces[current_piece];
-			for (int i = 0; i < 4; i++) {
-				piece[i][0] += yp;
-				piece[i][1] += xp;
-				if (b[piece[i][0]][piece[i][1]] == 1 || piece[i][1] < 0) {
-					xp++;
-					dis = 0;
-					break;
-				}
-			}
-			if (dis == 1) {
-				display(piece);
-			}
-			while (GetKeyState('A') & 0x8000);
-		}
-		if (GetKeyState('D') & 0x8000)
-		{
-			int dis = 1;
-			xp = min(x - 1, xp + 1);
-			reset();
-			pc piece = pieces[current_piece];
-			for (int i = 0; i < 4; i++) {
-				piece[i][0] += yp;
-				piece[i][1] += xp;
-				if (b[piece[i][0]][piece[i][1]] == 1 || piece[i][1] > x - 1) {
-					xp--;
-					dis = 0;
-					break;
-				}
-			}
-			if (dis == 1) {
-				display(piece);
-			}
-			while (GetKeyState('D') & 0x8000);
-		}
-	}
-}
 void fall(int pic) {
-	current_piece = pic;
-	xp = x / 2 - 1;
-	yp = 0;
+	int xp = x / 2 - 1;
+	int yp = 0;
 	for (int i = 0; i < y + 1; i++) {
 		pc piece = pieces[pic];
 		for (int j = 0; j < 4; j++) {
@@ -174,27 +124,22 @@ void fall(int pic) {
 					vector<int> pxpyb = piece[n];
 					b[pxpyb[0]][pxpyb[1]] = 1;
 				}
-				display({});
-				we_up = 1;
-				sleep(500);
-				we_up = 0;
-				reset();
+				pc_display = {};
+				display_n = 1;
+				sleep(50);
 				if (yp == 0) {
 					game_over = 1;
 				}
 				return;
 			}
 		}
-		display(piece);
-		we_up = 1;
-		sleep(500);
-		we_up = 0;
+		pc_display = piece;
+		display_n = 1;
+		sleep(50);
 		yp++;
-		reset();
 	}
 }
 void game_over_() {
-	display({});
 	cout << R"(
    ______                        ____ _    ____________     
   / ____/___ _____ ___  ___     / __ \ |  / / ____/ __ \    
@@ -204,9 +149,19 @@ void game_over_() {
 						)";
 }
 
+void display_state() {
+	while (true) {
+		if (display_n) {
+			display_n = 0;
+			reset();
+			display(pc_display);
+		}
+	}
+}
+
 int main(void) {
-	thread th(update_xy);
-	for (int i = 0; i < 30; i++) {
+	thread th(display_state);
+	for (int i = 0; i < 20; i++) {
 		fall(random_n(0, 6));
 		if (game_over) {
 			game_over_();
