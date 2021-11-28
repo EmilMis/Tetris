@@ -3,17 +3,24 @@
 #include <chrono>
 #include <thread>
 #include <random>
+#include <windows.h>
 
 #define pc vector<vector<int>>
 
 using namespace std;
 
-const int x = 10;
+const int x = 20;
 const int y = 20;
+
+int game_over = 0;
 
 int b[y][x];
 
 char block_char = 'O';
+
+int xp, yp;
+int current_piece;
+int we_up = 0;
 
 pc I = { {0, 0}, {0, 1}, {0, 2}, {0, 3} };
 pc L = { {0, 0}, {0, 1}, {0, 2}, {1, 2} };
@@ -103,12 +110,57 @@ int random_n(int s, int l) {
 	uniform_int_distribution<mt19937::result_type> dist(s, l);
 	return dist(rng);
 }
-pc random_piece() {
-	return pieces[random_n(0, 6)];
+void update_xy() {
+	while (true) {
+		if (!we_up) {
+			continue;
+		}
+		if (GetKeyState('A') & 0x8000)
+		{
+			int dis = 1;
+			xp = max(0, xp - 1);
+			reset();
+			pc piece = pieces[current_piece];
+			for (int i = 0; i < 4; i++) {
+				piece[i][0] += yp;
+				piece[i][1] += xp;
+				if (b[piece[i][0]][piece[i][1]] == 1 || piece[i][1] < 0) {
+					xp++;
+					dis = 0;
+					break;
+				}
+			}
+			if (dis == 1) {
+				display(piece);
+			}
+			while (GetKeyState('A') & 0x8000);
+		}
+		if (GetKeyState('D') & 0x8000)
+		{
+			int dis = 1;
+			xp = min(x - 1, xp + 1);
+			reset();
+			pc piece = pieces[current_piece];
+			for (int i = 0; i < 4; i++) {
+				piece[i][0] += yp;
+				piece[i][1] += xp;
+				if (b[piece[i][0]][piece[i][1]] == 1 || piece[i][1] > x - 1) {
+					xp--;
+					dis = 0;
+					break;
+				}
+			}
+			if (dis == 1) {
+				display(piece);
+			}
+			while (GetKeyState('D') & 0x8000);
+		}
+	}
 }
 void fall(int pic) {
-	int xp = x / 2 - 1;
-	int yp = 0;
+	current_piece = pic;
+	xp = x / 2 - 1;
+	yp = 0;
 	for (int i = 0; i < y + 1; i++) {
 		pc piece = pieces[pic];
 		for (int j = 0; j < 4; j++) {
@@ -123,21 +175,43 @@ void fall(int pic) {
 					b[pxpyb[0]][pxpyb[1]] = 1;
 				}
 				display({});
-				sleep(50);
+				we_up = 1;
+				sleep(500);
+				we_up = 0;
 				reset();
+				if (yp == 0) {
+					game_over = 1;
+				}
 				return;
 			}
 		}
 		display(piece);
-		sleep(50);
+		we_up = 1;
+		sleep(500);
+		we_up = 0;
 		yp++;
 		reset();
 	}
 }
+void game_over_() {
+	display({});
+	cout << R"(
+   ______                        ____ _    ____________     
+  / ____/___ _____ ___  ___     / __ \ |  / / ____/ __ \    
+ / / __/ __ `/ __ `__ \/ _ \   / / / / | / / __/ / /_/ /    
+/ /_/ / /_/ / / / / / /  __/  / /_/ /| |/ / /___/ _, _/     
+\____/\__,_/_/ /_/ /_/\___/   \____/ |___/_____/_/ |_|      
+						)";
+}
 
 int main(void) {
-	for (int i = 0; i < 7; i++) {
-		fall(i);
+	thread th(update_xy);
+	for (int i = 0; i < 30; i++) {
+		fall(random_n(0, 6));
+		if (game_over) {
+			game_over_();
+			return 0;
+		}
 	}
 	display({});
 }
